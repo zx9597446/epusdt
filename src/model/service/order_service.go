@@ -2,6 +2,10 @@ package service
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+
 	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/model/dao"
 	"github.com/assimon/luuu/model/data"
@@ -15,9 +19,6 @@ import (
 	"github.com/golang-module/carbon/v2"
 	"github.com/hibiken/asynq"
 	"github.com/shopspring/decimal"
-	"math/rand"
-	"sync"
-	"time"
 )
 
 const (
@@ -33,15 +34,17 @@ var gCreateTransactionLock sync.Mutex
 func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateTransactionResponse, error) {
 	gCreateTransactionLock.Lock()
 	defer gCreateTransactionLock.Unlock()
+
+	//payAmount 修改为  USDT
 	payAmount := math.MustParsePrecFloat64(req.Amount, 2)
 	// 按照汇率转化USDT
 	decimalPayAmount := decimal.NewFromFloat(payAmount)
-	decimalRate := decimal.NewFromFloat(config.GetUsdtRate())
-	decimalUsdt := decimalPayAmount.Div(decimalRate)
+	// decimalRate := decimal.NewFromFloat(config.GetUsdtRate())
+	decimalUsdt := decimalPayAmount
 	// cny 是否可以满足最低支付金额
-	if decimalPayAmount.Cmp(decimal.NewFromFloat(CnyMinimumPaymentAmount)) == -1 {
-		return nil, constant.PayAmountErr
-	}
+	// if decimalPayAmount.Cmp(decimal.NewFromFloat(CnyMinimumPaymentAmount)) == -1 {
+	// 	return nil, constant.PayAmountErr
+	// }
 	// Usdt是否可以满足最低支付金额
 	if decimalUsdt.Cmp(decimal.NewFromFloat(UsdtMinimumPaymentAmount)) == -1 {
 		return nil, constant.PayAmountErr
